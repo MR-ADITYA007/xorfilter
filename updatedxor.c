@@ -31,7 +31,8 @@ uint64_t fnv1a_64(const uint8_t *data, size_t len) {
     return h;
 }
 
-void derive_hashes(uint64_t h, uint32_t *h0, uint32_t *h1, uint32_t *h2, uint8_t *fp) {
+void derive_hashes(uint64_t h, uint32_t *h0, uint32_t *h1,
+                   uint32_t *h2, uint8_t *fp) {
     *h0 = mix64(h) % TABLE_SIZE;
     *h1 = mix64(h + GOLDEN) % TABLE_SIZE;
     *h2 = mix64(h + 2 * GOLDEN) % TABLE_SIZE;
@@ -62,7 +63,7 @@ int xor_filter_maybe_contains(const char *key) {
     return (xor_filter[a] ^ xor_filter[b] ^ xor_filter[c]) == fp;
 }
 
-/* ---------- Rabin–Karp (Exact) ---------- */
+/* ---------- Rabin–Karp ---------- */
 
 int rabin_karp(const char *txt, const char *pat) {
     int n = strlen(txt);
@@ -75,7 +76,7 @@ int rabin_karp(const char *txt, const char *pat) {
     return -1;
 }
 
-/* ---------- Read file ---------- */
+/* ---------- File I/O ---------- */
 
 void read_file(const char *filename, char *buffer) {
     FILE *fp = fopen(filename, "r");
@@ -89,22 +90,44 @@ void read_file(const char *filename, char *buffer) {
     fclose(fp);
 }
 
+/* ---------- Utility ---------- */
+
+void to_lowercase(char *s) {
+    for (; *s; s++) {
+        if (*s >= 'A' && *s <= 'Z')
+            *s = *s - 'A' + 'a';
+    }
+}
+
 /* ---------- Main ---------- */
 
 int main() {
     char text[MAX_TEXT];
     char pattern[100];
 
-    // Read file
     read_file("input.txt", text);
+    to_lowercase(text);
 
-    // Patterns to index in XOR filter
-    const char *patterns[] = {"abc", "def", "xyz"};
-    for (int i = 0; i < 3; i++)
+    /* Keywords safely used in XOR filter */
+    const char *patterns[] = {
+        "abc", "def", "xyz",
+        "rabin", "karp", "algorithm",
+        "substring", "search", "filter",
+        "patterns", "data", "structures",
+        "algorithms", "science", "file",
+        "text", "matching", "exact",
+        "sample", "demonstrating",
+        "efficiently", "computer",
+        "approach", "reduce"
+    };
+
+    int count = sizeof(patterns) / sizeof(patterns[0]);
+    for (int i = 0; i < count; i++)
         xor_filter_insert(patterns[i]);
 
     printf("Enter pattern to search: ");
-    scanf("%s", pattern);
+    scanf("%99s", pattern);
+    to_lowercase(pattern);
 
     if (xor_filter_maybe_contains(pattern)) {
         printf("XOR Filter: maybe present\n");
